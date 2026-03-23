@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<title>Swiss Arena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a;--s1:#141414;--s2:#1e1e1e;--s3:#282828;--s4:#323232;
+  --b1:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.12);--b3:rgba(255,255,255,0.22);
+  --acc:#e8ff3c;--acc2:#ff6b35;--acc3:#3cffb0;
+  --txt:#efefef;--txt2:#888;--txt3:#444;
+  --grn:#3cff8f;--red:#ff4757;--blu:#3c9eff;--gld:#ffd700;
+  --r:10px;--r2:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+.hidden{display:none!important}
+
+/* HDR */
+#hdr{position:sticky;top:0;z-index:200;background:rgba(10,10,10,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--b1);padding:10px 18px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--acc);cursor:pointer}
+.logo em{color:var(--txt3);font-style:normal;font-size:12px;font-family:'DM Sans',sans-serif;letter-spacing:0;margin-left:6px}
+#hdr-right{font-size:12px;color:var(--txt2);text-align:right;line-height:1.6}
+#hdr-right strong{color:var(--acc);font-size:14px;display:block}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--txt3);display:inline-block;margin-right:5px;vertical-align:middle;transition:background .3s}
+.sdot.ok{background:var(--grn)}
+.sdot.syncing{background:var(--gld);animation:pulse .7s infinite}
+.sdot.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* SCREENS */
+.screen{padding:20px 18px;max-width:640px;margin:0 auto}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 20px;border-radius:var(--r2);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all .15s;line-height:1;text-decoration:none}
+.bp{background:var(--acc);color:#0a0a0a}.bp:hover{background:#d4eb28;transform:translateY(-1px)}
+.bs{background:var(--s2);color:var(--txt);border:1px solid var(--b2)}.bs:hover{background:var(--s3)}
+.bd{background:transparent;color:var(--red);border:1px solid rgba(255,71,87,.35)}.bd:hover{background:var(--red);color:#fff}
+.bg{background:var(--grn);color:#0a0a0a}.bg:hover{background:#2de07a}
+.bfull{width:100%}.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
+.bsm{padding:6px 12px;font-size:12px}
+
+/* INPUTS */
+input,select{width:100%;padding:11px 13px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r2);color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s}
+input:focus,select:focus{border-color:var(--acc)}
+input::placeholder{color:var(--txt3)}
+label{font-size:12px;color:var(--txt2);margin-bottom:5px;display:block}
+.field{margin-bottom:14px}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.ctitle{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--txt2);margin-bottom:14px}
+
+/* HOME */
+#home-screen{padding-top:36px}
+.hero{font-family:'Bebas Neue',sans-serif;font-size:clamp(50px,13vw,84px);letter-spacing:3px;line-height:.92;margin-bottom:10px}
+.hero span{color:var(--acc)}
+.hero-sub{color:var(--txt2);font-size:13px;margin-bottom:32px}
+.home-btns{display:flex;flex-direction:column;gap:9px;max-width:280px}
+.home-btns .btn{font-size:15px;padding:14px}
+
+/* REGISTRY */
+.reg-wrap{margin-top:28px;padding-top:24px;border-top:1px solid var(--b1)}
+.reg-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.reg-title{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;color:var(--txt3)}
+.t-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r2);margin-bottom:7px;cursor:pointer;transition:border-color .15s}
+.t-item:hover{border-color:var(--b2)}
+.t-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.t-dot.active{background:var(--grn)}.t-dot.finished{background:var(--txt3)}.t-dot.lobby{background:var(--gld)}
+.t-info{flex:1;min-width:0}
+.t-info .tn{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-info .tm{font-size:11px;color:var(--txt2);margin-top:2px;font-family:'DM Mono',monospace;letter-spacing:.5px}
+.t-del{padding:5px 8px;background:transparent;border:none;color:var(--txt3);cursor:pointer;font-size:13px;border-radius:3px;transition:all .15s;flex-shrink:0}
+.t-del:hover{color:var(--red);background:rgba(255,71,87,.1)}
+
+/* JOIN */
+.join-section{margin-top:24px;padding-top:20px;border-top:1px solid var(--b1)}
+.join-section h3{font-size:11px;color:var(--txt2);margin-bottom:12px;text-transform:uppercase;letter-spacing:1.5px}
+
+/* LOBBY */
+.code-box{font-family:'DM Mono',monospace;font-size:48px;letter-spacing:12px;text-align:center;color:var(--acc);padding:20px;background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);margin-bottom:14px;cursor:pointer;user-select:none}
+.code-box:hover{border-color:var(--b2)}
+.code-box small{display:block;font-size:10px;letter-spacing:1px;color:var(--txt3);margin-top:5px;font-family:'DM Sans',sans-serif}
+.pgrid2{display:grid;gap:7px}
+.pchip{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--s2);border-radius:var(--r2);border:1px solid var(--b1)}
+.pchip .av{width:28px;height:28px;border-radius:50%;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--acc);flex-shrink:0}
+.pchip .pn{font-size:13px;font-weight:500}
+.pchip .pb{margin-left:auto;font-size:10px;padding:2px 6px;border-radius:3px}
+.bhost{background:rgba(232,255,60,.1);color:var(--acc)}.bready{background:rgba(60,255,143,.1);color:var(--grn)}
+
+/* CONFIG GRIDS */
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.cnote{font-size:11px;color:var(--txt3);margin-top:4px}
+
+/* TOURNAMENT */
+.tabs{display:flex;gap:3px;margin-bottom:16px;background:var(--s1);padding:3px;border-radius:var(--r2);border:1px solid var(--b1)}
+.tab{flex:1;padding:8px;text-align:center;font-size:12px;font-weight:500;color:var(--txt2);cursor:pointer;border-radius:4px;transition:all .15s}
+.tab.active{background:var(--s3);color:var(--txt)}
+.rnd-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.rnd-lbl{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px}
+.rnd-lbl .acc{color:var(--acc2)}
+.sbadge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.sopen{background:rgba(60,158,255,.15);color:var(--blu)}.sclosed{background:rgba(80,80,80,.2);color:var(--txt2)}
+
+/* PAIRINGS */
+.pcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);margin-bottom:9px;overflow:hidden}
+.pprow{display:grid;grid-template-columns:1fr 28px 1fr;align-items:center}
+.pp{padding:13px}.pp.l{text-align:left}.pp.r{text-align:right}
+.pp .pn{font-weight:500;font-size:14px}.pp .ppt{font-size:11px;color:var(--txt2);margin-top:2px}
+.pvs{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:var(--txt3)}
+.presrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b1);border-top:1px solid var(--b1)}
+.rbtn{padding:9px 4px;text-align:center;cursor:pointer;background:var(--s2);font-size:11px;font-weight:500;color:var(--txt2);transition:all .15s;border:none;font-family:'DM Sans',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbtn:hover:not(:disabled){background:var(--s3);color:var(--txt)}.rbtn:disabled{cursor:default;opacity:.5}
+.rw1.on{background:rgba(60,255,143,.18);color:var(--grn)}
+.rd.on{background:rgba(60,158,255,.18);color:var(--blu)}
+.rw2.on{background:rgba(60,255,143,.18);color:var(--grn)}
+.pbye{padding:13px;display:flex;align-items:center;justify-content:space-between}
+.byebadge{font-size:11px;padding:3px 8px;border-radius:4px;background:rgba(255,215,0,.15);color:var(--gld)}
+
+/* RANKING */
+.rtable{width:100%;border-collapse:collapse}
+.rtable th{text-align:left;font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;padding:7px 9px;border-bottom:1px solid var(--b1)}
+.rtable th:last-child,.rtable td:last-child{text-align:right}
+.rtable td{padding:9px 9px;font-size:12px;border-bottom:1px solid var(--b1)}
+.rtable tr:last-child td{border-bottom:none}
+.rnk{color:var(--txt3);font-size:11px;width:20px}
+.ptsbg{display:inline-block;padding:2px 8px;background:var(--s2);border-radius:3px;font-weight:500;font-size:12px;color:var(--acc)}
+.tag{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px}
+.tg{background:rgba(60,255,143,.12);color:var(--grn)}.tb{background:rgba(60,158,255,.12);color:var(--blu)}.tr{background:rgba(255,71,87,.12);color:var(--red)}
+
+/* PLAYER VIEW */
+.mypair{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:22px;text-align:center;margin-bottom:14px}
+.vslbl{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:3px;color:var(--txt3);margin-bottom:6px}
+.oppname{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;color:var(--acc);line-height:1}
+.opppts{font-size:12px;color:var(--txt2);margin-top:5px}
+.myptsbig{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--acc);line-height:1;text-align:center}
+.myptslbl{font-size:11px;color:var(--txt2);text-align:center;margin-top:3px}
+.statrow{display:flex;gap:9px;margin-top:12px}
+.stat{flex:1;background:var(--s2);border-radius:var(--r2);padding:12px;text-align:center}
+.stat .v{font-size:18px;font-weight:500}.stat .l{font-size:10px;color:var(--txt2);margin-top:3px;text-transform:uppercase;letter-spacing:1px}
+.waiting{text-align:center;padding:44px 20px;color:var(--txt2);font-size:13px}
+.spinner{width:26px;height:26px;border:2px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* FINISHED */
+.finbanner{text-align:center;padding:26px;border:1px solid var(--b2);border-radius:var(--r);margin-bottom:18px;background:var(--s1)}
+.finbanner h2{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--acc)}
+.finbanner p{color:var(--txt2);font-size:12px;margin-top:5px}
+
+/* MISC */
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:2px;color:var(--txt3);text-transform:uppercase;margin-bottom:9px;margin-top:18px}
+.irow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b1);font-size:13px}
+.irow:last-child{border-bottom:none}.irow .l{color:var(--txt2)}
+.alert{padding:10px 13px;border-radius:var(--r2);font-size:12px;margin-bottom:12px}
+.awarn{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.2);color:var(--gld)}
+.ainfo{background:rgba(60,158,255,.08);border:1px solid rgba(60,158,255,.2);color:var(--blu)}
+.aok{background:rgba(60,255,143,.08);border:1px solid rgba(60,255,143,.2);color:var(--grn)}
+.aerr{background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.2);color:var(--red)}
+.gap{margin-top:12px}.gapl{margin-top:20px}
+.flex{display:flex;gap:9px;align-items:center}
+.mono{font-family:'DM Mono',monospace;letter-spacing:2px}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="logo" onclick="goHome()">Swiss<em>Arena</em></div>
+  <div id="hdr-right" class="hidden">
+    <strong id="hdr-name">—</strong>
+    <span><span class="sdot" id="sdot"></span><span id="slbl">—</span></span>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="home-screen" class="screen">
+  <div class="hero">Swiss<br><span>Arena</span></div>
+  <p class="hero-sub">Torneo suizo · multidispositivo · tiempo real</p>
+  <div class="home-btns">
+    <button class="btn bp bfull" onclick="goCreate()">+ Crear torneo</button>
+  </div>
+
+  <div class="join-section">
+    <h3>Unirse a un torneo</h3>
+    <div class="field">
+      <label>Código de torneo</label>
+      <input id="ji-code" placeholder="Ej. AB12" maxlength="6" style="text-transform:uppercase;font-family:'DM Mono',monospace;font-size:22px;letter-spacing:6px;text-align:center">
+    </div>
+    <div class="field">
+      <label>Tu nombre / alias</label>
+      <input id="ji-name" placeholder="Cómo quieres aparecer" maxlength="20">
+    </div>
+    <button class="btn bs bfull" onclick="joinTournament()">Unirse →</button>
+  </div>
+
+  <div class="reg-wrap">
+    <div class="reg-hdr">
+      <span class="reg-title">Torneos guardados</span>
+      <span id="reg-count" style="font-size:11px;color:var(--txt3)"></span>
+    </div>
+    <div id="reg-list"><div style="font-size:12px;color:var(--txt3);padding:6px 0">No hay torneos guardados</div></div>
+  </div>
+</div>
+
+<!-- CREATE -->
+<div id="create-screen" class="screen hidden">
+  <div class="flex" style="margin-bottom:18px">
+    <button class="btn bs bsm" onclick="goHome()">← Volver</button>
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px">Nuevo Torneo</h2>
+  </div>
+  <div class="card">
+    <div class="ctitle">Básico</div>
+    <div class="field"><label>Nombre</label><input id="c-name" value="Swiss Arena" maxlength="40"></div>
+    <div class="cgrid">
+      <div class="field"><label>Tu nombre (host)</label><input id="c-host" placeholder="Host" maxlength="20"></div>
+      <div class="field"><label>Rondas</label><input id="c-rounds" type="number" value="5" min="1" max="20"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ctitle">Puntos</div>
+    <div class="pgrid3">
+      <div class="field"><label>Victoria</label><input id="c-win" type="number" value="3" min="1" max="10"></div>
+      <div class="field"><label>Empate</label><input id="c-draw" type="number" value="1" min="0" max="5"></div>
+      <div class="field"><label>Bye</label><input id="c-bye" type="number" value="3" min="0" max="10"></div>
+    </div>
+    <p class="cnote">Derrota siempre 0 pts</p>
+  </div>
+  <button class="btn bp bfull" onclick="createTournament()">Crear torneo →</button>
+</div>
+
+<!-- HOST LOBBY -->
+<div id="host-lobby-screen" class="screen hidden">
+  <div id="hl-code" class="code-box" onclick="copyCode()">
+    <span id="hl-code-txt">----</span>
+    <small>Toca para copiar · comparte con los jugadores</small>
+  </div>
+  <div class="alert ainfo">Los jugadores abren la app e introducen este código. Cuando estén todos, inicia.</div>
+  <div class="stitle">Jugadores (<span id="hl-count">0</span>)</div>
+  <div class="pgrid2" id="hl-players"></div>
+  <div class="flex gapl">
+    <button class="btn bp" style="flex:2" onclick="startTournament()">Iniciar torneo →</button>
+    <button class="btn bd" style="flex:1" onclick="delTournamentConfirm()">Cancelar</button>
+  </div>
+</div>
+
+<!-- HOST TOURNAMENT -->
+<div id="host-t-screen" class="screen hidden">
+  <div class="tabs">
+    <div class="tab active" id="ht-tp" onclick="htTab('p')">Partidas</div>
+    <div class="tab" id="ht-tr" onclick="htTab('r')">Ranking</div>
+    <div class="tab" id="ht-ti" onclick="htTab('i')">Info</div>
+  </div>
+  <div id="ht-pp">
+    <div class="rnd-hdr">
+      <div class="rnd-lbl">Ronda <span id="ht-rn" class="acc">1</span><span style="color:var(--txt3);font-size:16px"> / </span><span id="ht-rt" style="color:var(--txt2);font-size:20px">5</span></div>
+      <div id="ht-rs" class="sbadge sopen">Abierta</div>
+    </div>
+    <div id="ht-pairs"></div>
+    <div id="ht-acts"></div>
+  </div>
+  <div id="ht-rp" class="hidden"><div id="ht-ranking"></div></div>
+  <div id="ht-ip" class="hidden">
+    <div class="card"><div class="ctitle">Torneo</div><div id="ht-info"></div></div>
+    <div class="gapl">
+      <button class="btn bd bfull" onclick="endTournament()">Finalizar torneo</button>
+    </div>
+    <div class="gap">
+      <button class="btn bs bfull" style="color:var(--red);border-color:rgba(255,71,87,.3)" onclick="delTournamentConfirm()">Eliminar torneo</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLAYER WAITING -->
+<div id="player-wait-screen" class="screen hidden">
+  <div class="waiting">
+    <div class="spinner"></div>
+    <p>Conectado. Esperando al host...</p>
+    <div id="pw-name" style="margin-top:10px;font-size:18px;font-weight:500"></div>
+    <div id="pw-code" style="margin-top:5px;font-size:12px;color:var(--txt3);font-family:'DM Mono',monospace;letter-spacing:3px"></div>
+  </div>
+</div>
+
+<!-- PLAYER TOURNAMENT -->
+<div id="player-t-screen" class="screen hidden">
+  <div class="tabs">
+    <div class="tab active" id="pt-tm" onclick="ptTab('m')">Mi partida</div>
+    <div class="tab" id="pt-tr" onclick="ptTab('r')">Ranking</div>
+  </div>
+  <div id="pt-pm"><div id="pt-match"></div></div>
+  <div id="pt-pr" class="hidden"><div id="pt-ranking"></div></div>
+</div>
+
+<!-- FINISHED -->
+<div id="finished-screen" class="screen hidden">
+  <div class="finbanner"><h2>🏆 Torneo Finalizado</h2><p>Resultados definitivos</p></div>
+  <div id="fin-ranking"></div>
+  <button class="btn bs bfull gapl" onclick="goHome()">Volver al inicio</button>
+</div>
+
+<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--s3);color:var(--txt);padding:9px 16px;border-radius:var(--r2);font-size:12px;font-weight:500;border:1px solid var(--b2);z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:90vw"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STORAGE + SYNC ENGINE
+// Primary: Netlify Functions + Blobs (real cross-device sync)
+// Secondary: localStorage (cache / offline fallback)
+// Tertiary: BroadcastChannel (cross-tab instant sync)
+// ═══════════════════════════════════════════════════════════
+
+const LS = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  del: k => localStorage.removeItem(k),
+  keys: () => Object.keys(localStorage).filter(k=>k.startsWith('swiss_t_')).map(k=>k.slice(8))
+};
+
+// BroadcastChannel for same-browser instant sync
+let bc;
+try { bc = new BroadcastChannel('swiss_arena'); } catch(e) { bc = null; }
+if (bc) bc.onmessage = e => {
+  if (e.data?.type==='update' && e.data.code===tournamentCode) {
+    LS.set('swiss_t_'+e.data.code, e.data.data);
+    renderCurrent();
+  }
+};
+
+// ── Sync status ──────────────────────────────────────────
+function setSS(s) {
+  const dot = document.getElementById('sdot');
+  const lbl = document.getElementById('slbl');
+  if (!dot) return;
+  const m = {ok:['ok','Sync OK'],syncing:['syncing','Sincronizando…'],err:['err','Error sync'],local:['ok','Local']};
+  const [c,t] = m[s]||['ok','OK'];
+  dot.className = 'sdot '+c;
+  if (lbl) lbl.textContent = t;
+}
+
+// ── Netlify Functions API ─────────────────────────────────
+const API = '/api/tournament';
+
+async function cloudPush(t) {
+  setSS('syncing');
+  try {
+    const r = await fetch(API, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(t)
+    });
+    if (r.ok) { setSS('ok'); return true; }
+  } catch(e) {}
+  setSS('local'); return false;
+}
+
+async function cloudPull(code) {
+  try {
+    const r = await fetch(API + '?code=' + encodeURIComponent(code.toUpperCase()));
+    if (r.ok) {
+      const remote = await r.json();
+      if (remote && !remote.error) {
+        const local = LS.get('swiss_t_'+code);
+        if (!local || (remote.updatedAt||0) >= (local.updatedAt||0)) {
+          LS.set('swiss_t_'+code, remote);
+          setSS('ok');
+          return remote;
+        }
+        setSS('ok');
+        return local;
+      }
+    }
+  } catch(e) {}
+  const local = LS.get('swiss_t_'+code);
+  setSS(local ? 'local' : 'err');
+  return local;
+}
+
+async function cloudDelete(code) {
+  try {
+    await fetch(API + '?code=' + encodeURIComponent(code.toUpperCase()), { method: 'DELETE' });
+  } catch(e) {}
+  LS.del('swiss_t_'+code);
+}
+
+// ── Save tournament (cloud + local + broadcast) ──────────
+async function saveTournament(t) {
+  t.updatedAt = Date.now();
+  LS.set('swiss_t_'+t.code, t);
+  if (bc) bc.postMessage({ type:'update', code:t.code, data:t });
+  await cloudPush(t);
+}
+
+// ── Load tournament ──────────────────────────────────────
+async function loadTournament(code) {
+  setSS('syncing');
+  const t = await cloudPull(code.toUpperCase());
+  setSS(t ? 'ok' : 'err');
+  return t;
+}
+
+// ═══════════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════════
+let role=null, tournamentCode=null, myName=null;
+let pollTimer=null, hTab='p', pTab='m';
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+function rndCode() {
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+let _toastT;
+function toast(msg,d=2500) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(_toastT);
+  _toastT=setTimeout(()=>el.style.transform='translateX(-50%) translateY(70px)',d);
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+function ini(n) { return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+function copyCode() {
+  if (!tournamentCode) return;
+  navigator.clipboard.writeText(tournamentCode).then(()=>toast('✓ Código copiado: '+tournamentCode));
+}
+function goHome() {
+  stopPolling(); role=null; tournamentCode=null; myName=null;
+  LS.del('swiss_session');
+  document.getElementById('hdr-right').classList.add('hidden');
+  renderRegistry(); showScreen('home-screen');
+}
+function goCreate() { renderRegistry(); showScreen('create-screen'); }
+function updHdr(t) {
+  document.getElementById('hdr-right').classList.remove('hidden');
+  document.getElementById('hdr-name').textContent = myName+(role==='host'?' (host)':'');
+  document.getElementById('slbl').textContent = t.code+' · '+t.players.length+'j';
+}
+
+// ═══════════════════════════════════════════════════════════
+// REGISTRY
+// ═══════════════════════════════════════════════════════════
+function renderRegistry() {
+  const codes = LS.keys();
+  const el = document.getElementById('reg-list');
+  const ct = document.getElementById('reg-count');
+  if (!codes.length) {
+    el.innerHTML='<div style="font-size:12px;color:var(--txt3);padding:6px 0">No hay torneos guardados</div>';
+    ct.textContent=''; return;
+  }
+  ct.textContent = codes.length+' guardados';
+  el.innerHTML = codes.map(code=>{
+    const t=LS.get('swiss_t_'+code); if (!t) return '';
+    const dc = t.status==='active'?'active':t.status==='finished'?'finished':'lobby';
+    const st = t.status==='active'?'Activo':t.status==='finished'?'Fin.':'Lobby';
+    const rnd = t.status!=='lobby'?` · R${t.currentRound}/${t.totalRounds}`:'';
+    const sync = t.binId?'<span style="color:var(--grn);font-size:9px;margin-left:3px">●</span>':'<span style="color:var(--txt3);font-size:9px;margin-left:3px">○</span>';
+    return `<div class="t-item" onclick="resumeTournament('${code}')">
+      <div class="t-dot ${dc}"></div>
+      <div class="t-info">
+        <div class="tn">${t.name}${sync}</div>
+        <div class="tm">${t.code} · ${t.players.length}j · ${st}${rnd}</div>
+      </div>
+      <button class="t-del" onclick="delDirect(event,'${code}')" title="Eliminar">✕</button>
+    </div>`;
+  }).filter(Boolean).join('');
+}
+
+async function delDirect(e,code) {
+  e.stopPropagation();
+  if (!confirm('¿Eliminar torneo '+code+'?')) return;
+  await cloudDelete(code);
+  if (LS.get('swiss_session')?.code===code) LS.del('swiss_session');
+  toast('Torneo eliminado'); renderRegistry();
+}
+
+async function delTournamentConfirm() {
+  if (!confirm('¿Eliminar este torneo? Se borrará para todos.')) return;
+  await cloudDelete(tournamentCode);
+  LS.del('swiss_session'); stopPolling();
+  toast('Torneo eliminado'); goHome();
+}
+
+async function resumeTournament(code) {
+  let t=LS.get('swiss_t_'+code);
+  if (!t) { t = await loadTournament(code); }
+  if (!t) { toast('Torneo no encontrado'); return; }
+  const s=LS.get('swiss_session');
+  if (s && s.code===code) {
+    role=s.role; myName=s.name; tournamentCode=code;
+    restoreScreen(t); startPolling();
+  } else {
+    const name=prompt('¿Cuál es tu nombre en este torneo?');
+    if (!name) return;
+    const p=t.players.find(x=>x.name.toLowerCase()===name.toLowerCase());
+    if (!p) { toast('Jugador no encontrado'); return; }
+    role=name.toLowerCase()===t.hostName.toLowerCase()?'host':'player';
+    myName=p.name; tournamentCode=code;
+    LS.set('swiss_session',{role,code,name:myName});
+    restoreScreen(t); startPolling();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CREATE
+// ═══════════════════════════════════════════════════════════
+async function createTournament() {
+  const name=document.getElementById('c-name').value.trim()||'Torneo Suizo';
+  const host=document.getElementById('c-host').value.trim();
+  const rounds=parseInt(document.getElementById('c-rounds').value)||5;
+  const win=parseInt(document.getElementById('c-win').value)||3;
+  const draw=parseInt(document.getElementById('c-draw').value)||1;
+  const bye=parseInt(document.getElementById('c-bye').value)||3;
+  if (!host) { toast('Escribe tu nombre como host'); return; }
+  const code=rndCode();
+  const t={
+    code,name,hostName:host,totalRounds:rounds,currentRound:0,
+    status:'lobby',pts:{win,draw,bye},
+    players:[{name:host,pts:0,wins:0,draws:0,losses:0,byes:0,opponents:[],buchholz:0}],
+    rounds:[],createdAt:Date.now(),updatedAt:Date.now()
+  };
+  role='host'; myName=host; tournamentCode=code;
+  await saveTournament(t);
+  LS.set('swiss_session',{role,code,name:myName});
+  showHostLobby(t); startPolling();
+}
+
+// ═══════════════════════════════════════════════════════════
+// JOIN
+// ═══════════════════════════════════════════════════════════
+async function joinTournament() {
+  const code=document.getElementById('ji-code').value.trim().toUpperCase();
+  const name=document.getElementById('ji-name').value.trim();
+  if (code.length<4) { toast('Introduce el código'); return; }
+  if (!name) { toast('Introduce tu nombre'); return; }
+  setSS('syncing');
+  let t = await loadTournament(code);
+  if (!t) { toast('Torneo no encontrado'); setSS('err'); return; }
+  if (t.status==='finished') { toast('Torneo ya finalizado'); return; }
+  if (t.status==='active') { toast('El torneo ya ha comenzado'); return; }
+  if (t.players.find(p=>p.name.toLowerCase()===name.toLowerCase())) { toast('Nombre ya en uso'); return; }
+  t.players.push({name,pts:0,wins:0,draws:0,losses:0,byes:0,opponents:[],buchholz:0});
+  await saveTournament(t);
+  role='player'; myName=name; tournamentCode=code;
+  LS.set('swiss_session',{role,code,name:myName});
+  showPWait(name,code); startPolling();
+}
+
+// ═══════════════════════════════════════════════════════════
+// HOST LOBBY
+// ═══════════════════════════════════════════════════════════
+function showHostLobby(t) {
+  showScreen('host-lobby-screen');
+  document.getElementById('hl-code-txt').textContent=t.code;
+  updHdr(t); renderLobbyPlayers(t);
+}
+function renderLobbyPlayers(t) {
+  document.getElementById('hl-count').textContent=t.players.length;
+  document.getElementById('hl-players').innerHTML=t.players.map((p,i)=>
+    `<div class="pchip"><div class="av">${ini(p.name)}</div><span class="pn">${p.name}</span>
+    ${i===0?'<span class="pb bhost">Host</span>':'<span class="pb bready">Listo</span>'}</div>`
+  ).join('');
+}
+async function startTournament() {
+  const t=LS.get('swiss_t_'+tournamentCode);
+  if (!t) return;
+  if (t.players.length<2) { toast('Necesitas al menos 2 jugadores'); return; }
+  t.status='active'; t.currentRound=1;
+  t.rounds.push(genPairings(t));
+  await saveTournament(t); showHostTournament(t);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SWISS PAIRING
+// ═══════════════════════════════════════════════════════════
+function genPairings(t) {
+  const players=[...t.players].sort((a,b)=>b.pts-a.pts||b.wins-a.wins||b.buchholz-a.buchholz);
+  const paired=new Set(), pairings=[];
+  if (players.length%2!==0) {
+    let bp=null;
+    for (let i=players.length-1;i>=0;i--) { if (!players[i].byes){bp=players[i];break;} }
+    if (!bp) bp=players[players.length-1];
+    paired.add(bp.name);
+    pairings.push({type:'bye',player:bp.name,result:null});
+  }
+  for (let i=0;i<players.length;i++) {
+    if (paired.has(players[i].name)) continue;
+    let found=false;
+    for (let j=i+1;j<players.length;j++) {
+      if (paired.has(players[j].name)) continue;
+      if (players[i].opponents.includes(players[j].name)&&players.length>4) continue;
+      paired.add(players[i].name); paired.add(players[j].name);
+      pairings.push({type:'game',white:players[i].name,black:players[j].name,result:null});
+      found=true; break;
+    }
+    if (!found) {
+      for (let j=i+1;j<players.length;j++) {
+        if (paired.has(players[j].name)) continue;
+        paired.add(players[i].name); paired.add(players[j].name);
+        pairings.push({type:'game',white:players[i].name,black:players[j].name,result:null});
+        break;
+      }
+    }
+  }
+  return {roundNum:t.currentRound,pairings,closed:false};
+}
+
+// ═══════════════════════════════════════════════════════════
+// HOST TOURNAMENT
+// ═══════════════════════════════════════════════════════════
+function showHostTournament(t) { showScreen('host-t-screen'); updHdr(t); renderHPairs(t); }
+function htTab(tab) {
+  hTab=tab;
+  ['p','r','i'].forEach(x=>{
+    document.getElementById('ht-t'+x).classList.toggle('active',x===tab);
+    document.getElementById('ht-'+x+'p').classList.toggle('hidden',x!==tab);
+  });
+  if (tab==='r') renderHRanking(); if (tab==='i') renderHInfo();
+}
+function renderHPairs(t) {
+  if (!t) return;
+  const round=t.rounds[t.currentRound-1]; if (!round) return;
+  document.getElementById('ht-rn').textContent=round.roundNum;
+  document.getElementById('ht-rt').textContent=t.totalRounds;
+  const rs=document.getElementById('ht-rs');
+  rs.textContent=round.closed?'Cerrada':'Abierta';
+  rs.className='sbadge '+(round.closed?'sclosed':'sopen');
+  document.getElementById('ht-pairs').innerHTML=round.pairings.map((p,idx)=>{
+    if (p.type==='bye') return `<div class="pcard"><div class="pbye">
+      <div><div class="pn">${p.player}</div><div style="font-size:11px;color:var(--txt2);margin-top:1px">BYE automático</div></div>
+      <span class="byebadge">+${t.pts.bye} pts</span>
+    </div></div>`;
+    const pw=t.players.find(x=>x.name===p.white), pb=t.players.find(x=>x.name===p.black);
+    const dis=round.closed?'disabled':'';
+    const wn=p.white.split(' ')[0], bn=p.black.split(' ')[0];
+    return `<div class="pcard">
+      <div class="pprow">
+        <div class="pp l"><div class="pn">${p.white}</div><div class="ppt">${pw?.pts||0} pts</div></div>
+        <div class="pvs">VS</div>
+        <div class="pp r"><div class="pn">${p.black}</div><div class="ppt">${pb?.pts||0} pts</div></div>
+      </div>
+      <div class="presrow">
+        <button class="rbtn rw1 ${p.result==='w1'?'on':''}" onclick="setRes(${idx},'w1')" ${dis} title="${p.white}">${wn}</button>
+        <button class="rbtn rd ${p.result==='draw'?'on':''}" onclick="setRes(${idx},'draw')" ${dis}>Empate</button>
+        <button class="rbtn rw2 ${p.result==='w2'?'on':''}" onclick="setRes(${idx},'w2')" ${dis} title="${p.black}">${bn}</button>
+      </div>
+    </div>`;
+  }).join('');
+  const acts=document.getElementById('ht-acts');
+  if (t.status==='finished') { acts.innerHTML=`<div class="alert aok">Torneo finalizado.</div>`; return; }
+  if (round.closed) {
+    acts.innerHTML = t.currentRound<t.totalRounds
+      ?`<button class="btn bp bfull" onclick="nextRound()">Siguiente ronda (${t.currentRound+1}/${t.totalRounds}) →</button>`
+      :`<button class="btn bg bfull" onclick="endTournament()">🏆 Finalizar torneo</button>`;
+  } else {
+    const all=round.pairings.filter(p=>p.type==='game').every(p=>p.result!==null);
+    acts.innerHTML = all
+      ?`<button class="btn bp bfull" onclick="closeRound()">Cerrar ronda · publicar ranking →</button>`
+      :`<div class="alert awarn">Introduce todos los resultados para cerrar la ronda.</div>`;
+  }
+}
+async function setRes(idx, result) {
+  const t=LS.get('swiss_t_'+tournamentCode); if (!t) return;
+  const round=t.rounds[t.currentRound-1]; if (round.closed) return;
+  round.pairings[idx].result=result;
+  await saveTournament(t); renderHPairs(t);
+}
+async function closeRound() {
+  const t=LS.get('swiss_t_'+tournamentCode); if (!t) return;
+  const round=t.rounds[t.currentRound-1];
+  round.pairings.forEach(p=>{
+    if (p.type==='bye') {
+      const pl=t.players.find(x=>x.name===p.player);
+      if (pl){pl.pts+=t.pts.bye;pl.byes++;}
+    } else {
+      const pw=t.players.find(x=>x.name===p.white);
+      const pb=t.players.find(x=>x.name===p.black);
+      if (!pw||!pb) return;
+      pw.opponents.push(p.black); pb.opponents.push(p.white);
+      if (p.result==='w1'){pw.pts+=t.pts.win;pw.wins++;pb.losses++;}
+      else if (p.result==='w2'){pb.pts+=t.pts.win;pb.wins++;pw.losses++;}
+      else if (p.result==='draw'){pw.pts+=t.pts.draw;pw.draws++;pb.pts+=t.pts.draw;pb.draws++;}
+    }
+  });
+  t.players.forEach(p=>{
+    p.buchholz=p.opponents.reduce((a,o)=>{const x=t.players.find(q=>q.name===o);return a+(x?x.pts:0);},0);
+  });
+  round.closed=true;
+  await saveTournament(t);
+  toast('✓ Ronda cerrada · Ranking publicado'); renderHPairs(t);
+}
+async function nextRound() {
+  const t=LS.get('swiss_t_'+tournamentCode); if (!t) return;
+  t.currentRound++; t.rounds.push(genPairings(t));
+  await saveTournament(t); renderHPairs(t);
+  if (hTab!=='p') htTab('p');
+  toast('Ronda '+t.currentRound+' iniciada');
+}
+async function endTournament() {
+  const t=LS.get('swiss_t_'+tournamentCode); if (!t) return;
+  if (!confirm('¿Finalizar el torneo?')) return;
+  t.status='finished'; await saveTournament(t); showFinished(t);
+}
+function renderHRanking() { const t=LS.get('swiss_t_'+tournamentCode); if (t) document.getElementById('ht-ranking').innerHTML=buildRanking(t); }
+function renderHInfo() {
+  const t=LS.get('swiss_t_'+tournamentCode); if (!t) return;
+  document.getElementById('ht-info').innerHTML=[
+    ['Nombre',t.name],['Código',`<span class="mono" style="color:var(--acc);font-size:18px">${t.code}</span>`],
+    ['Estado',t.status],['Rondas',`${t.currentRound}/${t.totalRounds}`],
+    ['Jugadores',t.players.length],['Victoria',`+${t.pts.win} pts`],
+    ['Empate',`+${t.pts.draw} pts`],['Bye',`+${t.pts.bye} pts`],
+    ['Sync','<span style="color:var(--grn)">Netlify Blobs ✓</span>'],
+  ].map(([l,v])=>`<div class="irow"><span class="l">${l}</span><span>${v}</span></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// RANKING
+// ═══════════════════════════════════════════════════════════
+function buildRanking(t) {
+  const s=[...t.players].sort((a,b)=>b.pts-a.pts||b.wins-a.wins||b.buchholz-a.buchholz||a.losses-b.losses);
+  const medals=['🥇','🥈','🥉'];
+  return `<table class="rtable"><thead><tr>
+    <th>#</th><th>Jugador</th><th>Bye</th><th>V</th><th>E</th><th>D</th><th title="Buchholz">BH</th><th>Pts</th>
+  </tr></thead><tbody>${s.map((p,i)=>`<tr>
+    <td class="rnk">${medals[i]||(i+1)}</td>
+    <td style="font-weight:500">${p.name}${p.name===myName?'<span style="margin-left:5px;font-size:9px;color:var(--acc)">★ tú</span>':''}</td>
+    <td style="font-size:11px;color:var(--txt3)">${p.byes||'—'}</td>
+    <td><span class="tag tg">${p.wins}</span></td>
+    <td><span class="tag tb">${p.draws}</span></td>
+    <td><span class="tag tr">${p.losses}</span></td>
+    <td style="font-size:11px;color:var(--txt2)">${p.buchholz||0}</td>
+    <td><span class="ptsbg">${p.pts}</span></td>
+  </tr>`).join('')}</tbody></table>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PLAYER SCREENS
+// ═══════════════════════════════════════════════════════════
+function showPWait(name,code) {
+  showScreen('player-wait-screen');
+  document.getElementById('pw-name').textContent=name;
+  document.getElementById('pw-code').textContent=code;
+  document.getElementById('hdr-right').classList.remove('hidden');
+  document.getElementById('hdr-name').textContent=name;
+  setSS('ok');
+}
+function showPTournament(t) { showScreen('player-t-screen'); updHdr(t); renderPMatch(t); }
+function ptTab(tab) {
+  pTab=tab;
+  ['m','r'].forEach(x=>{
+    document.getElementById('pt-t'+x).classList.toggle('active',x===tab);
+    document.getElementById('pt-p'+x).classList.toggle('hidden',x!==tab);
+  });
+  if (tab==='r') renderPRanking();
+}
+function renderPMatch(t) {
+  const round=t.rounds[t.currentRound-1];
+  const me=t.players.find(p=>p.name===myName);
+  const area=document.getElementById('pt-match');
+  if (!round){area.innerHTML='<div class="waiting"><div class="spinner"></div><p>Esperando emparejamientos…</p></div>';return;}
+  const myP=round.pairings.find(p=>
+    (p.type==='game'&&(p.white===myName||p.black===myName))||(p.type==='bye'&&p.player===myName)
+  );
+  let html='';
+  if (!myP) {
+    html='<div class="waiting"><div class="spinner"></div><p>Esperando emparejamiento…</p></div>';
+  } else if (myP.type==='bye') {
+    html=`<div class="mypair"><div class="vslbl">RONDA ${round.roundNum}</div>
+      <div class="oppname" style="color:var(--gld)">BYE</div>
+      <div class="opppts">Descanso · +${t.pts.bye} pts garantizados</div></div>`;
+  } else {
+    const isW=myP.white===myName;
+    const oppN=isW?myP.black:myP.white;
+    const opp=t.players.find(p=>p.name===oppN);
+    let rt='',rc='var(--txt2)';
+    if (myP.result){
+      if (myP.result==='draw'){rt='½ Empate';rc='var(--blu)';}
+      else if ((myP.result==='w1'&&isW)||(myP.result==='w2'&&!isW)){rt='✓ Victoria';rc='var(--grn)';}
+      else {rt='✗ Derrota';rc='var(--red)';}
+    } else { rt=round.closed?'Ronda cerrada':'Partida en curso'; }
+    html=`<div class="mypair">
+      <div class="vslbl">RONDA ${round.roundNum} · CONTRA</div>
+      <div class="oppname">${oppN}</div>
+      <div class="opppts">${opp?opp.pts+' pts':''} · ${isW?'Blancas':'Negras'}</div>
+      <div style="margin-top:12px;font-size:15px;font-weight:600;color:${rc}">${rt}</div>
+    </div>`;
+  }
+  const myPts=me?.pts||0;
+  const sorted=[...t.players].sort((a,b)=>b.pts-a.pts);
+  const myRank=sorted.findIndex(p=>p.name===myName)+1;
+  area.innerHTML=html+`
+    <div style="margin-top:12px"><div class="myptsbig">${myPts}</div><div class="myptslbl">puntos</div></div>
+    <div class="statrow">
+      <div class="stat"><div class="v">#${myRank}</div><div class="l">Posición</div></div>
+      <div class="stat"><div class="v" style="color:var(--grn)">${me?.wins||0}</div><div class="l">Victorias</div></div>
+      <div class="stat"><div class="v" style="color:var(--red)">${me?.losses||0}</div><div class="l">Derrotas</div></div>
+    </div>
+    <div style="margin-top:9px;font-size:10px;color:var(--txt3);text-align:center">Ronda ${t.currentRound} de ${t.totalRounds}</div>`;
+}
+function renderPRanking() { const t=LS.get('swiss_t_'+tournamentCode); if (t) document.getElementById('pt-ranking').innerHTML=buildRanking(t); }
+
+// ═══════════════════════════════════════════════════════════
+// FINISHED
+// ═══════════════════════════════════════════════════════════
+function showFinished(t) {
+  showScreen('finished-screen');
+  document.getElementById('fin-ranking').innerHTML=buildRanking(t);
+  stopPolling(); renderRegistry();
+}
+
+// ═══════════════════════════════════════════════════════════
+// POLLING (2s interval, pulls from cloud)
+// ═══════════════════════════════════════════════════════════
+function startPolling() { stopPolling(); pollTimer=setInterval(poll,2000); }
+function stopPolling() { if (pollTimer){clearInterval(pollTimer);pollTimer=null;} }
+
+function renderCurrent() {
+  const t=LS.get('swiss_t_'+tournamentCode); if (!t) return;
+  const s=document.querySelector('.screen:not(.hidden)'); if (!s) return;
+  const id=s.id;
+  if (role==='host') {
+    if (id==='host-lobby-screen') renderLobbyPlayers(t);
+    else if (id==='host-t-screen') { updHdr(t); if (hTab==='p') renderHPairs(t); else if (hTab==='r') renderHRanking(); }
+  } else {
+    if (t.status==='finished'){showFinished(t);return;}
+    if (t.status==='active') {
+      if (id==='player-wait-screen') showPTournament(t);
+      else if (id==='player-t-screen') { updHdr(t); if (pTab==='m') renderPMatch(t); else renderPRanking(); }
+    }
+  }
+}
+
+async function poll() {
+  if (!tournamentCode) return;
+  const t=await loadTournament(tournamentCode);
+  if (!t) return;
+  renderCurrent();
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESTORE SESSION
+// ═══════════════════════════════════════════════════════════
+function restoreScreen(t) {
+  updHdr(t);
+  if (role==='host') {
+    if (t.status==='lobby') showHostLobby(t);
+    else if (t.status==='active') showHostTournament(t);
+    else showFinished(t);
+  } else {
+    if (t.status==='lobby') showPWait(myName,t.code);
+    else if (t.status==='active') showPTournament(t);
+    else showFinished(t);
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('ji-code').addEventListener('input',function(){
+    this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  });
+  const s=LS.get('swiss_session');
+  if (s) {
+    const t=LS.get('swiss_t_'+s.code);
+    if (t) {
+      role=s.role; tournamentCode=s.code; myName=s.name;
+      restoreScreen(t); startPolling(); return;
+    }
+  }
+  renderRegistry(); showScreen('home-screen');
+});
+</script>
+</body>
+</html>
