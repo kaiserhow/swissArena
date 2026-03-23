@@ -144,6 +144,16 @@ label{font-size:12px;color:var(--txt2);margin-bottom:5px;display:block}
 .stat{flex:1;background:var(--s2);border-radius:var(--r2);padding:12px;text-align:center}
 .stat .v{font-size:18px;font-weight:500}.stat .l{font-size:10px;color:var(--txt2);margin-top:3px;text-transform:uppercase;letter-spacing:1px}
 .waiting{text-align:center;padding:44px 20px;color:var(--txt2);font-size:13px}
+.pres-big{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:2px;line-height:1;margin:10px 0 4px;text-align:center}
+.pres-big.win{color:var(--grn)}.pres-big.draw{color:var(--blu)}.pres-big.loss{color:var(--red)}.pres-big.pending{color:var(--txt3)}
+.pres-sub{font-size:11px;color:var(--txt2);text-align:center;margin-bottom:4px}
+.pbtns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+.pbtn{padding:10px 4px;border-radius:6px;border:1px solid var(--b2);background:var(--s2);color:var(--txt2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center}
+.pbtn:hover:not(:disabled){border-color:var(--acc);color:var(--acc)}
+.pbtn.sel-win{background:rgba(60,255,143,.18);border-color:var(--grn);color:var(--grn)}
+.pbtn.sel-draw{background:rgba(60,158,255,.18);border-color:var(--blu);color:var(--blu)}
+.pbtn.sel-loss{background:rgba(255,71,87,.18);border-color:var(--red);color:var(--red)}
+.pbtn:disabled{opacity:.4;cursor:default}
 .spinner{width:26px;height:26px;border:2px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -639,12 +649,20 @@ function renderHPairs(t) {
     const pw=t.players.find(x=>x.name===p.white), pb=t.players.find(x=>x.name===p.black);
     const dis=round.closed?'disabled':'';
     const wn=p.white.split(' ')[0], bn=p.black.split(' ')[0];
+    const pr=p.playerReport||{};
+    const prHint=Object.keys(pr).length>0
+      ?`<div style="font-size:10px;color:var(--txt3);padding:5px 10px;display:flex;gap:8px;flex-wrap:wrap">`
+        +Object.entries(pr).map(([nm,res])=>{
+          const lbl=res==='draw'?'Empate':res==='w1'?nm+' ganó (V)':nm+' perdió (D)';
+          return `<span>📱 ${nm}: ${res==='w1'?pw.name+' ganó':res==='w2'?pb.name+' ganó':'Empate'}</span>`;
+        }).join('')+'</div>' : '';
     return `<div class="pcard">
       <div class="pprow">
         <div class="pp l"><div class="pn">${p.white}</div><div class="ppt">${pw?.pts||0} pts</div></div>
         <div class="pvs">VS</div>
         <div class="pp r"><div class="pn">${p.black}</div><div class="ppt">${pb?.pts||0} pts</div></div>
       </div>
+      ${prHint}
       <div class="presrow">
         <button class="rbtn rw1 ${p.result==='w1'?'on':''}" onclick="setRes(${idx},'w1')" ${dis} title="${p.white}">${wn}</button>
         <button class="rbtn rd ${p.result==='draw'?'on':''}" onclick="setRes(${idx},'draw')" ${dis}>Empate</button>
@@ -778,17 +796,45 @@ function renderPMatch(t) {
     const isW=myP.white===myName;
     const oppN=isW?myP.black:myP.white;
     const opp=t.players.find(p=>p.name===oppN);
-    let rt='',rc='var(--txt2)';
-    if (myP.result){
-      if (myP.result==='draw'){rt='½ Empate';rc='var(--blu)';}
-      else if ((myP.result==='w1'&&isW)||(myP.result==='w2'&&!isW)){rt='✓ Victoria';rc='var(--grn)';}
-      else {rt='✗ Derrota';rc='var(--red)';}
-    } else { rt=round.closed?'Ronda cerrada':'Partida en curso'; }
+    const pIdx=round.pairings.indexOf(myP);
+    const myReport=(myP.playerReport||{})[myName];
+
+    // Big result display
+    let resBig='—', resCls='pending';
+    if (myP.result) {
+      const iWon=(myP.result==='w1'&&isW)||(myP.result==='w2'&&!isW);
+      if (myP.result==='draw'){resBig='½ EMPATE';resCls='draw';}
+      else if (iWon){resBig='✓ VICTORIA';resCls='win';}
+      else {resBig='✗ DERROTA';resCls='loss';}
+    }
+
+    // Report buttons — only when round is open and no confirmed result yet
+    let reportHTML='';
+    if (!round.closed && !myP.result) {
+      const winRes=isW?'w1':'w2', lossRes=isW?'w2':'w1';
+      const wSel=myReport===winRes?'sel-win':'', dSel=myReport==='draw'?'sel-draw':'', lSel=myReport===lossRes?'sel-loss':'';
+      const dis=myReport?'disabled':'';
+      reportHTML=`<div class="pbtns">
+        <button class="pbtn ${wSel}" onclick="playerReport(${pIdx},'${winRes}')" ${dis}>Victoria</button>
+        <button class="pbtn ${dSel}" onclick="playerReport(${pIdx},'draw')" ${dis}>Empate</button>
+        <button class="pbtn ${lSel}" onclick="playerReport(${pIdx},'${lossRes}')" ${dis}>Derrota</button>
+      </div>
+      <div style="font-size:10px;color:var(--txt3);text-align:center;margin-top:6px">
+        ${myReport?'• Reporte enviado · esperando confirmación del host':'• Reporta tu resultado (el host confirma)'}
+      </div>`;
+    } else if (!round.closed && myP.result) {
+      reportHTML=`<div style="font-size:11px;color:var(--grn);text-align:center;margin-top:8px">✓ Resultado confirmado</div>`;
+    } else if (round.closed) {
+      reportHTML=`<div style="font-size:11px;color:var(--txt3);text-align:center;margin-top:8px">Ronda cerrada</div>`;
+    }
+
     html=`<div class="mypair">
       <div class="vslbl">RONDA ${round.roundNum} · CONTRA</div>
       <div class="oppname">${oppN}</div>
-      <div class="opppts">${opp?opp.pts+' pts':''} · ${isW?'Blancas':'Negras'}</div>
-      <div style="margin-top:12px;font-size:15px;font-weight:600;color:${rc}">${rt}</div>
+      <div class="opppts">${opp?opp.pts+' pts':''}</div>
+      <div class="pres-big ${resCls}">${resBig}</div>
+      <div class="pres-sub">${myP.result?'Resultado final':'Sin resultado aún'}</div>
+      ${reportHTML}
     </div>`;
   }
   const myPts=me?.pts||0;
@@ -802,6 +848,27 @@ function renderPMatch(t) {
       <div class="stat"><div class="v" style="color:var(--red)">${me?.losses||0}</div><div class="l">Derrotas</div></div>
     </div>
     <div style="margin-top:9px;font-size:10px;color:var(--txt3);text-align:center">Ronda ${t.currentRound} de ${t.totalRounds}</div>`;
+}
+
+async function playerReport(pIdx, result) {
+  let t = await loadTournament(tournamentCode);
+  if (!t) return;
+  const round=t.rounds[t.currentRound-1];
+  if (!round||round.closed) { toast('La ronda ya está cerrada'); return; }
+  const p=round.pairings[pIdx];
+  if (!p||p.type!=='game') return;
+  if (!p.playerReport) p.playerReport={};
+  p.playerReport[myName]=result;
+  // If both players reported the same result → auto-confirm
+  const other=p.white===myName?p.black:p.white;
+  if (p.playerReport[other] && p.playerReport[other]===result) {
+    p.result=result;
+    toast('✓ Ambos coinciden · resultado confirmado automáticamente');
+  } else {
+    toast('✓ Enviado al host para confirmar');
+  }
+  await saveTournament(t);
+  renderPMatch(t);
 }
 function renderPRanking() { const t=LS.get('swiss_t_'+tournamentCode); if (t) document.getElementById('pt-ranking').innerHTML=buildRanking(t); }
 
