@@ -886,14 +886,9 @@ async function playerReport(pIdx, result) {
   if (!p||p.type!=='game') return;
   if (!p.playerReport) p.playerReport={};
   p.playerReport[myName]=result;
-  // If both players reported the same result → auto-confirm
-  const other=p.white===myName?p.black:p.white;
-  if (p.playerReport[other] && p.playerReport[other]===result) {
-    p.result=result;
-    toast('✓ Ambos coinciden · resultado confirmado automáticamente');
-  } else {
-    toast('✓ Enviado al host para confirmar');
-  }
+  // First report confirms immediately — no host needed
+  p.result=result;
+  toast('✓ Resultado registrado');
   await saveTournament(t);
   renderPMatch(t);
 }
