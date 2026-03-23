@@ -590,33 +590,45 @@ async function startTournament() {
 // SWISS PAIRING
 // ═══════════════════════════════════════════════════════════
 function genPairings(t) {
-  const players=[...t.players].sort((a,b)=>b.pts-a.pts||b.wins-a.wins||b.buchholz-a.buchholz);
+  // Sort by pts desc, buchholz as tiebreak
+  const players=[...t.players].sort((a,b)=>b.pts-a.pts||b.buchholz-a.buchholz||b.wins-a.wins);
   const paired=new Set(), pairings=[];
+
+  // BYE: assign to lowest-ranked player who hasn't had one yet
   if (players.length%2!==0) {
     let bp=null;
-    for (let i=players.length-1;i>=0;i--) { if (!players[i].byes){bp=players[i];break;} }
-    if (!bp) bp=players[players.length-1];
+    for (let i=players.length-1;i>=0;i--) {
+      if (!players[i].byes && !paired.has(players[i].name)){bp=players[i];break;}
+    }
+    if (!bp) bp=players[players.length-1]; // fallback: lowest ranked
     paired.add(bp.name);
     pairings.push({type:'bye',player:bp.name,result:null});
   }
+
+  // Swiss pairing: for each unpaired player, find the closest-ranked unpaired
+  // opponent they haven't faced yet. If none available, allow repeat (last resort).
   for (let i=0;i<players.length;i++) {
     if (paired.has(players[i].name)) continue;
-    let found=false;
+    let opponent=null;
+
+    // Pass 1: find closest in ranking who hasn't been faced
     for (let j=i+1;j<players.length;j++) {
       if (paired.has(players[j].name)) continue;
-      if (players[i].opponents.includes(players[j].name)&&players.length>4) continue;
-      paired.add(players[i].name); paired.add(players[j].name);
-      pairings.push({type:'game',white:players[i].name,black:players[j].name,result:null});
-      found=true; break;
-    }
-    if (!found) {
-      for (let j=i+1;j<players.length;j++) {
-        if (paired.has(players[j].name)) continue;
-        paired.add(players[i].name); paired.add(players[j].name);
-        pairings.push({type:'game',white:players[i].name,black:players[j].name,result:null});
-        break;
+      if (!players[i].opponents.includes(players[j].name)){
+        opponent=players[j]; break;
       }
     }
+
+    // Pass 2 (fallback): allow repeat if no fresh opponent exists
+    if (!opponent) {
+      for (let j=i+1;j<players.length;j++) {
+        if (!paired.has(players[j].name)){opponent=players[j];break;}
+      }
+    }
+
+    if (!opponent) continue;
+    paired.add(players[i].name); paired.add(opponent.name);
+    pairings.push({type:'game',white:players[i].name,black:opponent.name,result:null,playerReport:{}});
   }
   return {roundNum:t.currentRound,pairings,closed:false};
 }
@@ -650,23 +662,33 @@ function renderHPairs(t) {
     const dis=round.closed?'disabled':'';
     const wn=p.white.split(' ')[0], bn=p.black.split(' ')[0];
     const pr=p.playerReport||{};
-    const prHint=Object.keys(pr).length>0
-      ?`<div style="font-size:10px;color:var(--txt3);padding:5px 10px;display:flex;gap:8px;flex-wrap:wrap">`
-        +Object.entries(pr).map(([nm,res])=>{
-          const lbl=res==='draw'?'Empate':res==='w1'?nm+' ganó (V)':nm+' perdió (D)';
-          return `<span>📱 ${nm}: ${res==='w1'?pw.name+' ganó':res==='w2'?pb.name+' ganó':'Empate'}</span>`;
-        }).join('')+'</div>' : '';
+    // Determine if players reported — what they voted
+    const wVote=pr[p.white]||null;  // what white reported
+    const bVote=pr[p.black]||null;  // what black reported
+    const agree=wVote&&bVote&&wVote===bVote;
+    // Color the buttons based on player votes
+    // w1btn: green border if white voted w1 or black voted w1
+    const w1hint=(wVote==='w1'||bVote==='w1');
+    const drawhint=(wVote==='draw'||bVote==='draw');
+    const w2hint=(wVote==='w2'||bVote==='w2');
+    const reportLine=Object.keys(pr).length>0
+      ?`<div style="font-size:10px;padding:4px 10px 0;display:flex;gap:10px;flex-wrap:wrap;">`
+        +(wVote?`<span style="color:${wVote==='w1'?'var(--grn)':wVote==='w2'?'var(--red)':'var(--blu)'}">📱 ${p.white}: ${wVote==='w1'?'gana':wVote==='w2'?'pierde':'empate'}</span>`:'')
+        +(bVote?`<span style="color:${bVote==='w2'?'var(--grn)':bVote==='w1'?'var(--red)':'var(--blu)'}">📱 ${p.black}: ${bVote==='w2'?'gana':bVote==='w1'?'pierde':'empate'}</span>`:'')
+        +(agree?`<span style="color:var(--grn);font-weight:600">✓ Coinciden</span>`:Object.keys(pr).length===2?`<span style="color:var(--red)">⚠ Discrepan</span>`:'')
+        +'</div>'
+      :'';
     return `<div class="pcard">
       <div class="pprow">
         <div class="pp l"><div class="pn">${p.white}</div><div class="ppt">${pw?.pts||0} pts</div></div>
         <div class="pvs">VS</div>
         <div class="pp r"><div class="pn">${p.black}</div><div class="ppt">${pb?.pts||0} pts</div></div>
       </div>
-      ${prHint}
+      ${reportLine}
       <div class="presrow">
-        <button class="rbtn rw1 ${p.result==='w1'?'on':''}" onclick="setRes(${idx},'w1')" ${dis} title="${p.white}">${wn}</button>
-        <button class="rbtn rd ${p.result==='draw'?'on':''}" onclick="setRes(${idx},'draw')" ${dis}>Empate</button>
-        <button class="rbtn rw2 ${p.result==='w2'?'on':''}" onclick="setRes(${idx},'w2')" ${dis} title="${p.black}">${bn}</button>
+        <button class="rbtn rw1 ${p.result==='w1'?'on':''}" style="${!p.result&&w1hint?'outline:2px solid var(--grn);':''}" onclick="setRes(${idx},'w1')" ${dis} title="${p.white}">${wn}</button>
+        <button class="rbtn rd ${p.result==='draw'?'on':''}" style="${!p.result&&drawhint?'outline:2px solid var(--blu);':''}" onclick="setRes(${idx},'draw')" ${dis}>Empate</button>
+        <button class="rbtn rw2 ${p.result==='w2'?'on':''}" style="${!p.result&&w2hint?'outline:2px solid var(--grn);':''}" onclick="setRes(${idx},'w2')" ${dis} title="${p.black}">${bn}</button>
       </div>
     </div>`;
   }).join('');
@@ -706,8 +728,13 @@ async function closeRound() {
       else if (p.result==='draw'){pw.pts+=t.pts.draw;pw.draws++;pb.pts+=t.pts.draw;pb.draws++;}
     }
   });
+  // Recalculate Buchholz for ALL players after each round
+  // Buchholz = sum of current points of ALL opponents faced so far
   t.players.forEach(p=>{
-    p.buchholz=p.opponents.reduce((a,o)=>{const x=t.players.find(q=>q.name===o);return a+(x?x.pts:0);},0);
+    p.buchholz=p.opponents.reduce((acc,oppName)=>{
+      const opp=t.players.find(q=>q.name===oppName);
+      return acc+(opp?opp.pts:0);
+    },0);
   });
   round.closed=true;
   await saveTournament(t);
@@ -741,7 +768,7 @@ function renderHInfo() {
 // RANKING
 // ═══════════════════════════════════════════════════════════
 function buildRanking(t) {
-  const s=[...t.players].sort((a,b)=>b.pts-a.pts||b.wins-a.wins||b.buchholz-a.buchholz||a.losses-b.losses);
+  const s=[...t.players].sort((a,b)=>b.pts-a.pts||b.buchholz-a.buchholz||b.wins-a.wins||a.losses-b.losses||a.name.localeCompare(b.name));
   const medals=['🥇','🥈','🥉'];
   return `<table class="rtable"><thead><tr>
     <th>#</th><th>Jugador</th><th>Bye</th><th>V</th><th>E</th><th>D</th><th title="Buchholz">BH</th><th>Pts</th>
