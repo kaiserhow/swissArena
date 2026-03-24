@@ -316,10 +316,16 @@ label{font-size:12px;color:var(--txt2);margin-bottom:5px;display:block}
 <script>
 // ═══════════════════════════════════════════════════════════
 // STORAGE + SYNC ENGINE
-// Primary: Netlify Functions + Blobs (real cross-device sync)
+// Primary: Supabase (free, cross-device, no token limits)
 // Secondary: localStorage (cache / offline fallback)
 // Tertiary: BroadcastChannel (cross-tab instant sync)
 // ═══════════════════════════════════════════════════════════
+
+// ── Supabase config — replace with your project values ───
+const SB_URL  = 'https://YOUR_PROJECT.supabase.co';
+const SB_KEY  = 'YOUR_ANON_KEY';
+const SB_REST = SB_URL + '/rest/v1/tournaments';
+const SB_HDR  = { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
 
 const LS = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
@@ -349,29 +355,32 @@ function setSS(s) {
   if (lbl) lbl.textContent = t;
 }
 
-// ── Netlify Functions API ─────────────────────────────────
-const API = '/api/tournament';
-
+// ── Supabase API ─────────────────────────────────────────
 async function cloudPush(t) {
   setSS('syncing');
   try {
-    const r = await fetch(API, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(t)
+    // Upsert: insert or update by primary key (code)
+    const r = await fetch(SB_REST, {
+      method: 'POST',
+      headers: { ...SB_HDR, 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ code: t.code.toUpperCase(), data: t, updated_at: new Date().toISOString() })
     });
-    if (r.ok) { setSS('ok'); return true; }
-  } catch(e) {}
+    if (r.ok || r.status === 201) { setSS('ok'); return true; }
+    console.warn('Supabase push error', r.status, await r.text());
+  } catch(e) { console.warn('cloudPush', e); }
   setSS('local'); return false;
 }
 
 async function cloudPull(code) {
   try {
-    const r = await fetch(API + '?code=' + encodeURIComponent(code.toUpperCase()));
+    const r = await fetch(SB_REST + '?code=eq.' + encodeURIComponent(code.toUpperCase()) + '&select=data,updated_at', {
+      headers: SB_HDR
+    });
     if (r.ok) {
-      const remote = await r.json();
-      if (remote && !remote.error) {
-        const local = LS.get('swiss_t_'+code);
+      const rows = await r.json();
+      if (rows.length > 0) {
+        const remote = rows[0].data;
+        const local  = LS.get('swiss_t_'+code);
         if (!local || (remote.updatedAt||0) >= (local.updatedAt||0)) {
           LS.set('swiss_t_'+code, remote);
           setSS('ok');
@@ -381,7 +390,7 @@ async function cloudPull(code) {
         return local;
       }
     }
-  } catch(e) {}
+  } catch(e) { console.warn('cloudPull', e); }
   const local = LS.get('swiss_t_'+code);
   setSS(local ? 'local' : 'err');
   return local;
@@ -389,7 +398,10 @@ async function cloudPull(code) {
 
 async function cloudDelete(code) {
   try {
-    await fetch(API + '?code=' + encodeURIComponent(code.toUpperCase()), { method: 'DELETE' });
+    await fetch(SB_REST + '?code=eq.' + encodeURIComponent(code.toUpperCase()), {
+      method: 'DELETE',
+      headers: SB_HDR
+    });
   } catch(e) {}
   LS.del('swiss_t_'+code);
 }
@@ -760,7 +772,7 @@ function renderHInfo() {
     ['Estado',t.status],['Rondas',`${t.currentRound}/${t.totalRounds}`],
     ['Jugadores',t.players.length],['Victoria',`+${t.pts.win} pts`],
     ['Empate',`+${t.pts.draw} pts`],['Bye',`+${t.pts.bye} pts`],
-    ['Sync','<span style="color:var(--grn)">Netlify Blobs ✓</span>'],
+    ['Sync','<span style="color:var(--grn)">Supabase ✓</span>'],
   ].map(([l,v])=>`<div class="irow"><span class="l">${l}</span><span>${v}</span></div>`).join('');
 }
 
